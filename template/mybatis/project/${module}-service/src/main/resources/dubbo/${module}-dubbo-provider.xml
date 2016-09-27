@@ -19,27 +19,6 @@
 
     <dubbo:protocol port="-1"/>
 
-    <#list newtables as table>
-    <#assign hasBusinessPackage = false>
-    <#if table.businessPackage!="">
-    <#assign hasBusinessPackage = true>
-    </#if>
-    <#if hasBusinessPackage>
-    <bean id="${table.classNameBo}ServiceImpl" class="${basepackage}.service.${table.businessPackage}.impl.${table.classNameBo}ServiceImpl" />
-    <dubbo:service id="${table.instanceName}Service" interface="${basepackage}.service.${table.businessPackage}.${table.className}Service" ref="${table.classNameBo}ServiceImpl"/>
 
-    <bean id="${table.classNameBo}FacadeImpl" class="${basepackage}.facade.${table.businessPackage}.impl.${table.classNameBo}FacadeImpl" />
-    <dubbo:service id="${table.instanceName}Facade" interface="${basepackage}.facade.${table.businessPackage}.${table.className}Facade" ref="${table.classNameBo}FacadeImpl"/>
-
-    </#if>
-    <#if !hasBusinessPackage>
-    <bean id="${table.classNameBo}ServiceImpl" class="${basepackage}.service.impl.${table.classNameBo}ServiceImpl" />
-    <dubbo:service id="${table.instanceName}Service" interface="${basepackage}.service.${table.className}Service" ref="${table.classNameBo}ServiceImpl"/>
-
-    <bean id="${table.classNameBo}FacadeImpl" class="${basepackage}.facade.impl.${table.classNameBo}FacadeImpl" />
-    <dubbo:service id="${table.instanceName}Facade" interface="${basepackage}.facade.${table.className}Facade" ref="${table.classNameBo}FacadeImpl"/>
-
-    </#if>
-    </#list>
 
 </beans>
