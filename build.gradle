@@ -1,0 +1,110 @@
+buildscript{
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        maven { url "http://repo.thinkjoy.cn/content/repositories/public" }
+    }
+    dependencies{
+        classpath 'cn.thinkjoy.gradle.plugins:gradle-gitflow-plugin:1.0.1+'
+        classpath 'org.gradle.api.plugins:gradle-nexus-plugin:0.4'
+        classpath 'org.hibernate.build.gradle:gradle-maven-publish-auth:2.0.1+'
+    }
+}
+
+apply plugin: 'java'
+
+sourceCompatibility = 1.7
+version = '1.0'
+
+configurations {
+    all*.exclude group: 'log4j'
+}
+
+
+
+/** 此闭包内的声明子类皆可使用 */
+allprojects {
+    group = 'cn.starteasy.codegen'
+    version = '0.0.1'
+
+    apply plugin: 'java'
+    apply plugin: 'idea'
+    apply plugin: 'eclipse'
+    apply plugin: 'maven-publish'
+
+
+    repositories {
+
+        mavenLocal()
+        maven {
+            url 'http://repo.spring.io/snapshot'
+        }
+        maven { url "http://repo.thinkjoy.cn/content/repositories/public" }
+        mavenCentral()
+    }
+
+    publishing {
+//        publications {
+//            mavenJava(MavenPublication) { from components.java }
+//        }
+
+        repositories {
+            maven {
+                name = 'thinkjoy'
+                url "http://repo.thinkjoy.cn/content/repositories/${project.version.endsWith('-SNAPSHOT') ? 'snapshots' : 'releases'}"
+            }
+        }
+    }
+}
+
+subprojects{
+    dependencies {
+        testCompile group: 'junit', name: 'junit', version: '4.11'
+        compile 'mysql:mysql-connector-java:5.1.30'
+        compile 'org.freemarker:freemarker:2.3.20'
+        compile 'org.slf4j:slf4j-api:1.7.7'
+        compile 'ch.qos.logback:logback-classic:1.1.2'
+        compile 'org.slf4j:log4j-over-slf4j:1.7.7'
+        compile 'org.slf4j:jcl-over-slf4j:1.7.7'
+        compile 'org.slf4j:jul-to-slf4j:1.7.7'
+    }
+
+    task "createJavaProject" << {
+        sourceSets*.java.srcDirs*.each { it.mkdirs() }
+        sourceSets*.resources.srcDirs*.each { it.mkdirs() }
+
+        /** 可选生成子文件夹 */
+        file("src/main/filters").mkdirs()
+        file("src/main/assembly").mkdirs()
+        file("src/main/config").mkdirs()
+        file("src/main/scripts").mkdirs()
+
+        /** 填充文件，便于git提交 */
+        file("src/main/java/cn/starteasy/codegen").mkdirs()
+        file("src/main/java/cn/starteasy/codegen/package-info.java").createNewFile()
+        file("src/main/resources/spring.xml").createNewFile()
+
+        file("src/test/java/cn/starteasy/codegen").mkdirs()
+        file("src/test/java/cn/starteasy/codegen/package-info.java").createNewFile()
+        file("src/test/resources/spring.xml").createNewFile()
+    }
+
+    task createREADME(){
+        //file("README.md").createNewFile()
+    }
+}
+
+configure(subprojects.findAll{it.name.contains('war')}){
+    apply plugin: 'war'
+
+    task createWebProject(dependsOn: 'createJavaProject') << {
+        def webAppDir = file("$webAppDirName")
+        webAppDir.mkdirs()
+    }
+
+}
+
+task dist(type:Zip){
+    from jar.outputs.files
+    //from war.outputs.files
+}
