@@ -44,9 +44,9 @@ import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 <#if isCbd>
-import cn.thinkjoy.common.domain.CreateBaseDomain;
+import cn.starteasy.core.common.domain.CreateBaseDomain;
 <#else>
-import cn.thinkjoy.common.domain.BaseDomain;
+import cn.starteasy.core.common.domain.BaseDomain;
 </#if>
 
 import java.util.*;
