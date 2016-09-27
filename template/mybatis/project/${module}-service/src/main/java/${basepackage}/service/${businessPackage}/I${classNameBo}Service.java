@@ -17,9 +17,8 @@ package ${basepackage}.service.${table.businessPackage};
 <#if !hasBusinessPackage>
 package ${basepackage}.service;
 </#if>
-import cn.thinkjoy.common.service.IBaseService;
-import cn.thinkjoy.common.service.IPageService;
-
+import cn.starteasy.core.common.service.IBaseService;
+import cn.starteasy.core.common.service.IPageService;
 <#if hasBusinessPackage>
 import ${basepackage}.dao.${table.businessPackage}.I${className}DAO;
 import ${basepackage}.domain.${table.businessPackage}.${className};

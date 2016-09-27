@@ -1,3 +1,16 @@
+<#assign pkType = "Long">
+
+<#if table.getPkColumn()?exists>
+
+	<#if table.getPkColumn().sqlType==4>
+		<#assign pkType = "Integer">
+	<#elseif table.getPkColumn().sqlType==12>
+		<#assign pkType = "String">
+	<#elseif table.getPkColumn().sqlType==-5>
+		<#assign pkType = "Long">
+	</#if>
+
+</#if>
 <#assign className = table.classNameBo>
 /*
  * Copyright (c) 2013-2014, thinkjoy Inc. All Rights Reserved.
@@ -18,7 +31,7 @@ package ${basepackage}.${persistence};
 </#if>
 
 
-import cn.thinkjoy.common.dao.IBaseDAO;
+import cn.starteasy.core.common.dao.IBaseDAO;
 
 <#if hasBusinessPackage>
 import ${basepackage}.domain.${table.businessPackage}.${className};
@@ -28,7 +41,7 @@ import ${basepackage}.domain.${className};
 </#if>
 
 
-public interface I${className}DAO extends IBaseDAO<${className}>{
+public interface I${className}DAO extends IBaseDAO<${pkType},${className}>{
 	
 <#list table.columns as column>
 	<#if (column.unique && !column.pk)>

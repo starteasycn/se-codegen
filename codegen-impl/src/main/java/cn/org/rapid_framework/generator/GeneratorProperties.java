@@ -24,7 +24,7 @@ import java.util.Properties;
 public class GeneratorProperties {
     static PropertyPlaceholderHelper helper = new PropertyPlaceholderHelper("${", "}", ":", false);
 
-    static final String PROPERTIES_FILE_NAMES[] = new String[]{"generator.properties", "generator-qky.xml"};
+    static final String PROPERTIES_FILE_NAMES[] = new String[]{"generator.properties", "generator-beekeeper.xml"};
 
     static PropertiesHelper props = new PropertiesHelper(new Properties(), true);
 

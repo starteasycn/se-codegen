@@ -29,8 +29,7 @@ import ${basepackage}.dao.I${className}DAO;
 import ${basepackage}.domain.${className};
 import ${basepackage}.service.I${className}Service;
 </#if>
-
-import cn.thinkjoy.common.service.impl.AbstractPageService;
+import cn.starteasy.core.common.service.impl.AbstractPageService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
