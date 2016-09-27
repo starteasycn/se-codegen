@@ -1,0 +1,50 @@
+<#include "/macro.include"/>
+<#macro mapperEl value>${r"#{"}${value}}</#macro>
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="cn.thinkjoy.common.managerui.dao.IPermissionDAO">
+
+    <!-- 获取用户菜单 -->
+    <select id="getResByPerm" resultType="Resource">
+        select DISTINCT res.* from
+        ${module}_resource res left outer join ${module}_role_resource rres on res.id = rres.resourceId
+        left outer join ${module}_role_user ru on rres.roleId = ru.roleId
+        where ru.userId = <@mapperEl 'userId'/>
+        order by res.orderNum
+    </select>
+
+    <!-- 获取用户对应菜单的按钮权限 -->
+    <select id="getResActionByPerm" resultType="ResourceAction">
+        select ra.* from
+        ${module}_resource res left outer join ${module}_role_resource rres on res.id = rres.resourceId
+        left outer join ${module}_role_user ru on rres.roleId = ru.roleId
+        left outer join ${module}_resource_action ra on rres.resourceActionId = ra.id
+        <where>
+            <if test="condition.userId != null">
+                and ru.userId in (<@mapperEl 'condition.userId'/>)
+            </if>
+
+            <if test="condition.resourceId != null">
+                and ra.resourceId in (<@mapperEl 'condition.resourceId'/>)
+            </if>
+        </where>
+    </select>
+
+    <!-- 根据用户所在数据组获取其对应的数据id集合 -->
+    <select id="getDataByPerm" resultType="DatagroupData">
+        select mdgd.* from ${module}_datagroup_data mdgd
+        inner join ${module}_user_datagroup mudg on mudg.datagroupId = mdgd.datagroupId
+
+        <where>
+            <if test="condition.userId != null">
+                and mudg.userId in (<@mapperEl 'condition.userId'/>)
+            </if>
+
+            <if test="condition.dataModelId != null">
+                and mdgd.dataModelId in (<@mapperEl 'condition.dataModelId'/>)
+            </if>
+        </where>
+    </select>
+</mapper>
+

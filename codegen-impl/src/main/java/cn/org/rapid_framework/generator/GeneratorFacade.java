@@ -30,11 +30,6 @@ import cn.org.rapid_framework.generator.util.GeneratorException;
  */
 public class GeneratorFacade {
 
-    private static String[] alreadyTbls = new String[]{
-			"_data_model", "_model", "_resource", "_resource_action", "_resource_grid",
-			"_role", "_role_resource", "_role_user", "_user_data", "_datagroup", "_datagroup_data", "_user_datagroup"};
-
-
 	public Generator g = new Generator();
 	public GeneratorFacade(){
 		g.setOutRootDir(GeneratorProperties.getProperty("outRoot"));
@@ -178,25 +173,12 @@ public class GeneratorFacade {
 
             //yq add
             List<Table> newtables = new ArrayList<Table>();
-            List<Table> alreadytables = new ArrayList<Table>();
-            boolean isAlreay = false;
             for(Table table : tables){
                 //允许我多占用一会cpu
-                for(String already : alreadyTbls){
-                    if(table.getSqlName().toLowerCase().endsWith(already)){
-                        isAlreay = true;
-                        continue;
-                    }
-                }
 
 				table.setSqlName(table.getSqlName().toLowerCase());
-				table.setSysTable(isAlreay);
-                if(!isAlreay) {
-                    newtables.add(table);
-                } else {
-                    alreadytables.add(table);
-                }
-                isAlreay = false;
+				table.setSysTable(false);
+				newtables.add(table);
             }
 
 			List exceptions = new ArrayList();
@@ -208,14 +190,6 @@ public class GeneratorFacade {
 				}
 			}
 
-            //仅mybatis的公用部分
-            for(int i = 0; i < alreadytables.size(); i++ ) {
-                try {
-                    processByTable(getGenerator(templateRootDir),alreadytables.get(i),isDelete, true);
-                }catch(GeneratorException ge) {
-                    exceptions.addAll(ge.getExceptions());
-                }
-            }
 			PrintUtils.printExceptionsSumary("",getGenerator(templateRootDir).getOutRootDir(),exceptions);
 		}
 
@@ -301,17 +275,7 @@ public class GeneratorFacade {
             boolean isAlreay = false;
             for(Table table : tables){
                 //允许我多占用一会cpu
-                for(String already : alreadyTbls){
-                    if(table.getSqlName().endsWith(already)){
-                        isAlreay = true;
-                        continue;
-                    }
-                }
-
-                if(!isAlreay) {
-                    newtables.add(table);
-                }
-                isAlreay = false;
+				newtables.add(table);
             }
             templateModel.put("newtables", newtables);
 
