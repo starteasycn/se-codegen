@@ -7,16 +7,17 @@
         2.可以引用环境变量: ${env.JAVA_HOME} or System.properties: ${user.home},property之间也可以相互引用
     </comment>
 
-    <entry key="module">dm</entry>
-    <entry key="basepackage">cn.starteasy.${module}</entry>
+    <entry key="module">demo</entry>
+    <entry key="biz">demo</entry>
+    <entry key="basepackage">cn.starteasy.cloud.${module}</entry>
     <entry key="persistence">dao</entry>
 
-    <entry key="isCreateProject">true</entry>
+    <entry key="isCreateProject">false</entry>
 
     <!-- jsp namespace: web/${namespace}/${className}/list.jsp -->
     <entry key="namespace">pages</entry>
 
-    <entry key="projectDir">${user.dir}/run/${module}</entry>
+    <entry key="projectDir">${user.dir}/project/se/${module}</entry>
 
     <entry key="outRoot">${user.dir}/generator-output</entry>
 
@@ -26,6 +27,9 @@
     <!-- oracle需要指定jdbc.schema,并且可能要大写，其它数据库忽略此项配置 -->
     <entry key="jdbc.schema"></entry>
     <entry key="jdbc.catalog"></entry>
+    <entry key="initAdminSql">false</entry>
+
+
 
     <!-- 数据库类型至java类型映射 -->
     <entry key="java_typemapping.java.sql.Timestamp">java.util.Date</entry>
@@ -37,12 +41,12 @@
     <entry key="java_typemapping.java.sql.Clob">java.lang.String</entry>
 
     <!-- Mysql -->
-    <entry key="table.pre">${module}</entry>
-    <entry key="jdbc.databasename">${module}</entry>
-    <entry key="jdbc.url">jdbc:mysql://172.16.120.107:3306/${module}?useUnicode=true&amp;characterEncoding=UTF-8</entry>
+    <!--<entry key="table.pre">dap</entry>-->
+    <entry key="jdbc.databasename">ds_0</entry>
+    <entry key="jdbc.url">jdbc:mysql://127.0.0.1:3306/${jdbc.databasename}?useUnicode=true&amp;characterEncoding=UTF-8</entry>
     <entry key="jdbc.driver">com.mysql.jdbc.Driver</entry>
     <entry key="jdbc.username">root</entry>
-    <entry key="jdbc.password">weixiao123</entry>
+    <entry key="jdbc.password">root</entry>
 
     <!-- Oracle jdbc:oracle:oci:@tnsname_devdb
   <entry key="jdbc.url">jdbc:oracle:thin:@192.168.0.177:1521:[sid]</entry>

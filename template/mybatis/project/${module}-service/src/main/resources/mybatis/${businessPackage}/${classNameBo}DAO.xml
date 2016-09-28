@@ -22,37 +22,28 @@
 
 
 <!--
+C
 insert
-update
-updateNull
-deleteById
-deleteByCondition
-deleteByProperty
-fetch
+insertMap
+R
 findOne
-findList
 findAll
-queryPage
-like
-queryList
+exists
 queryOne
-count
-selectMaxId
-updateOrSave
-selectOne
-selectList
-findByCriteria
-countByCriteria
-findOneByCriteria
-pagingByCriteria
-updateByCriteria
-deleteByCriteria
+queryOneByWhereSql
+queryList
+queryListByWhereSql
+queryBySql
+queryBySqlCount
+U
+D
 -->
 <#assign isSKey = false>
 <#if table.getPkColumn().sqlType==12>
 <#assign isSKey = true>
 </#if>
 
+    <!-- 插入 -->
     <sql id="Base_Column_List">
         <#list table.columns as _column>
         ${_column.sqlName} as ${_column.columnNameFirstLower} <#if _column_has_next>,</#if>
@@ -88,424 +79,87 @@ deleteByCriteria
         </#if>
     </insert>
 
-    <!-- 更新 -->
-    <update id="update" parameterType="${className}">
-        UPDATE ${table.sqlName}
-        <trim prefix="SET" suffixOverrides=",">
-            <#list table.notPkColumns as column>
-            <if test="${column.columnNameFirstLower}!=null">
-                ${column.sqlName} = <@mapperEl column.columnNameFirstLower/>,
-            </if>
-            </#list>
-        </trim>
-        WHERE
-        <#list table.compositeIdColumns as column>
-        ${column.sqlName} = <@mapperEl column.columnNameFirstLower/><#if column_has_next> AND </#if>
-        </#list>
-    </update>
-
-    <update id="updateMap">
-        UPDATE ${table.sqlName}
-        <trim prefix="SET" suffixOverrides=",">
-            <#list table.notPkColumns as column>
-            <if test="map.${column.columnNameFirstLower}!=null">
-                ${column.sqlName} = <@mapperEl 'map.'+column.columnNameFirstLower />,
-            </if>
-            </#list>
-        </trim>
-        WHERE
-        id = <@mapperEl 'map.id'/>
-    </update>
-
-    <update id="updateByCondition">
-        UPDATE ${table.sqlName}
-        <trim prefix="SET" suffixOverrides=",">
-            <#list table.notPkColumns as column>
-            <if test="update.${column.columnNameFirstLower}!=null">
-                ${column.sqlName} = <@mapperEl 'update.'+column.columnNameFirstLower />,
-            </if>
-        </#list>
-        </trim>
-
-        <trim prefix="WHERE" prefixOverrides="AND | OR">
-        <#list table.columns as column>
-            <if test="condition.${column.columnNameFirstLower}!=null">
-                AND ${column.sqlName} = <@mapperEl 'condition.' + column.columnNameFirstLower/>
-            </if>
-        </#list>
-        </trim>
-    </update>
 
     <insert id="insertMap" >
         INSERT INTO ${table.sqlName} (
-            <#list table.columns as column>
-            <#if "id"!=column || isSKey>
-                ${column.sqlName}<#if column_has_next>,</#if>
-            </#if>
-            </#list>
-        ) VALUES (
-            <#list table.columns as column>
-                <#if "id"!=column>
-                    <@mapperEl 'map.'+column.columnNameFirstLower /><#if column_has_next>,</#if>
-                <#elseif isSKey>
-                    replace(uuid(),'-','')<#if column_has_next>,</#if>
+        <#list table.columns as column>
+        <#if "id"!=column || isSKey>
+        ${column.sqlName}<#if column_has_next>,</#if>
                 </#if>
-            </#list>
-        )
+                </#list>
+                ) VALUES (
+        <#list table.columns as column>
+        <#if "id"!=column>
+        <@mapperEl 'map.'+column.columnNameFirstLower /><#if column_has_next>,</#if>
+        <#elseif isSKey>
+                replace(uuid(),'-','')<#if column_has_next>,</#if>
+                </#if>
+                </#list>
+                )
     </insert>
 
-
-    <update id="updateNull" parameterType="${className}">
-        UPDATE ${table.sqlName}
-        <trim prefix="SET" suffixOverrides=",">
-            <#list table.notPkColumns as column>
-            ${column.sqlName} = <@mapperEl column.columnNameFirstLower/>,
+    <!-- 查询 -->
+    <select id="queryList" resultType="${className}">
+        SELECT
+        <if test="selector!=null">
+            <trim prefixOverrides=",">
+                <#list table.columns as column>
+                <if test="selector.${column.columnNameFirstLower}!=null">
+                    , ${column.sqlName}
+                </if>
             </#list>
         </trim>
-        WHERE
-        <#list table.compositeIdColumns as column>
-        ${column.sqlName} = <@mapperEl column.columnNameFirstLower/> <#if column_has_next> AND </#if>
+        </if>
+        <if test="selector==null">
+        <include refid="Base_Column_List" />
+        </if>
+
+        FROM ${table.sqlName}
+        <trim prefix="WHERE" prefixOverrides="AND | OR">
+        <#list table.columns as column>
+        <if test="condition.${column.columnNameFirstLower}!=null">
+
+            <if test="condition.${column.columnNameFirstLower}.op!='in' and condition.${column.columnNameFirstLower}.op!='like' and condition.${column.columnNameFirstLower}.op!='leftlike'">
+                <@jspEl 'condition.groupOp'/>   <@jspEl 'condition.' + column.columnNameFirstLower+'.field'/>  <@jspEl 'condition.' + column.columnNameFirstLower+'.op'/> <@mapperEl 'condition.' + column.columnNameFirstLower+'.data'/>
+            </if>
+            <if test="condition.${column.columnNameFirstLower}.op=='like'">
+                AND ${column.sqlName} like CONCAT('%', <@mapperEl 'condition.' + column.columnNameFirstLower+'.data'/> , '%')
+            </if>
+            <if test="condition.${column.columnNameFirstLower}.op=='leftlike'">
+                AND ${column.sqlName} like CONCAT(<@mapperEl 'condition.' + column.columnNameFirstLower+'.data'/> , '%')
+            </if>
+            <if test="condition.${column.columnNameFirstLower}.op=='in'">
+                ${condition.groupOp}   ${condition.login.field}  ${condition.login.op}
+                <foreach collection="condition.${column.columnNameFirstLower}.data" item="listItem" open="(" close=")" separator="," ><@mapperEl 'listItem'/></foreach>
+            </if>
+        </if>
         </#list>
-    </update>
-
-    <!-- 按Id删除 -->
-    <delete id="deleteById" parameterType="${idJavaType}">
-        DELETE FROM ${table.sqlName}
-        <trim prefix="WHERE" prefixOverrides="AND | OR">
-            <#list table.compositeIdColumns as column>
-            AND ${column.sqlName} = <@mapperEl 'id'/>
-            </#list>
         </trim>
-    </delete>
 
-
-    <delete id="deleteByCondition" parameterType="java.util.Map">
-        DELETE FROM ${table.sqlName}
-        <trim prefix="WHERE" prefixOverrides="AND | OR">
-            <#list table.columns as column>
-            <if test="${column.columnNameFirstLower}!=null">
-                AND ${column.sqlName} = <@mapperEl column.columnNameFirstLower/>
-            </if>
-            </#list>
-        </trim>
-    </delete>
-
-    <delete id="deleteByProperty" parameterType="java.util.Map">
-        DELETE FROM ${table.sqlName} WHERE
-        <@jspEl 'property'/> = <@mapperEl 'value'/>
-    </delete>
-
-    <select id="fetch" parameterType="${idJavaType}" resultType="${className}">
-        SELECT
-        <include refid="Base_Column_List" />
-        FROM ${table.sqlName}
-        <trim prefix="WHERE" prefixOverrides="AND | OR">
-            <#list table.compositeIdColumns as column>
-            AND ${column.sqlName} = <@mapperEl 'id'/>
-            </#list>
-        </trim>
-    </select>
-
-    <select id="findOne" parameterType="java.util.Map" resultType="${className}">
-        SELECT
-        <include refid="Base_Column_List" />
-        FROM ${table.sqlName} WHERE
-        <@jspEl 'property'/> = <@mapperEl 'value'/>
-        <if test="orderBy!=null">
-            ORDER BY <@jspEl 'orderBy'/> <@jspEl 'sortBy'/>
-        </if>
-        LIMIT 0,1
-    </select>
-
-    <select id="findList" parameterType="java.util.Map" resultType="${className}">
-        SELECT
-        <include refid="Base_Column_List" />
-        FROM ${table.sqlName} WHERE
-        <@jspEl 'property'/> = <@mapperEl 'value'/>
-        <if test="orderBy!=null">
-            ORDER BY <@jspEl 'orderBy'/> <@jspEl 'sortBy'/>
-        </if>
-    </select>
-
-    <select id="findAll" resultType="${className}">
-        SELECT
-        <include refid="Base_Column_List" />
-        FROM ${table.sqlName}
-        <if test="orderBy!=null">
-            ORDER BY <@jspEl 'orderBy'/> <@jspEl 'sortBy'/>
-        </if>
-    </select>
-
-    <select id="queryPage" resultType="${className}">
-        SELECT
-        <if test="selector!=null">
-            <trim prefixOverrides=",">
-                <#list table.columns as column>
-                        <if test="selector.${column.columnNameFirstLower}!=null">
-                            , ${column.sqlName}
-                        </if>
-                </#list>
-            </trim>
-        </if>
-        <if test="selector==null">
-        <include refid="Base_Column_List" />
-        </if>
-        FROM ${table.sqlName}
-        <where>
-
-            <if test="condition.whereSql != null">
-                and id in (<@mapperEl 'condition.whereSql'/>)
-            </if>
-
-            <#list table.columns as column>
-            <if test="condition.${column.columnNameFirstLower}!=null">
-                <@jspEl 'condition.groupOp'/>   <@jspEl 'condition.' + column.columnNameFirstLower+'.field'/>  <@jspEl 'condition.' + column.columnNameFirstLower+'.op'/>
-                <if test="condition.${column.columnNameFirstLower}.op!='in'"> <@mapperEl 'condition.' + column.columnNameFirstLower+'.data'/> </if>
-                <if test="condition.${column.columnNameFirstLower}.op=='in'">
-                    <foreach collection="condition.${column.columnNameFirstLower}.data" item="listItem" open="(" close=")" separator="," ><@mapperEl 'listItem'/></foreach>
-                </if>
-            </if>
-           </#list>
-
-
-    </where>
-        <if test="orderBy!=null">
-        ORDER BY <@jspEl 'orderBy'/> <@jspEl 'sortBy'/>
-        </if>
-        <if test="offset != null">
-            limit <@jspEl 'offset'/>, <@jspEl 'rows'/>
-        </if>
-    </select>
-
-    <select id="like" parameterType="java.util.Map" resultType="${className}">
-        SELECT
-        <if test="selector!=null">
-            <trim prefixOverrides=",">
-                <#list table.columns as column>
-                    <if test="selector.${column.columnNameFirstLower}!=null">
-                        , ${column.sqlName}
-                    </if>
-                </#list>
-            </trim>
-        </if>
-        <if test="selector==null">
-            <include refid="Base_Column_List" />
-        </if>
-        FROM ${table.sqlName}
-        <trim prefix="WHERE" prefixOverrides="AND | OR">
-            <#list table.columns as column>
-            <if test="condition.${column.columnNameFirstLower}!=null">
-                AND ${column.sqlName} like CONCAT('%', <@mapperEl 'condition.' + column.columnNameFirstLower/> , '%')
-            </if>
-            </#list>
-        </trim>
-        <if test="orderBy!=null">
-        ORDER BY <@jspEl 'orderBy'/> <@jspEl 'sortBy'/>
+        <if test="sorter!=null" >
+        ORDER BY
+        <foreach collection="sorter" item="sort" separator="," >
+            <@jspEl 'sort.field'/> <@jspEl 'sort.order'/></foreach>
         </if>
     </select>
 
 
-    <select id="queryList" parameterType="java.util.Map" resultType="${className}">
-        SELECT
-        <if test="selector!=null">
-            <trim prefixOverrides=",">
-                <#list table.columns as column>
-                    <if test="selector.${column.columnNameFirstLower}!=null">
-                        , ${column.sqlName}
-                    </if>
-                </#list>
-            </trim>
-        </if>
-        <if test="selector==null">
-        <include refid="Base_Column_List" />
-        </if>
-        FROM ${table.sqlName}
-        <trim prefix="WHERE" prefixOverrides="AND | OR">
-            <#list table.columns as column>
-            <if test="condition.${column.columnNameFirstLower}!=null">
-                AND ${column.sqlName} = <@conditionMapperEl column.columnNameFirstLower/>
-            </if>
-            </#list>
-        </trim>
-        <if test="orderBy!=null">
-        ORDER BY <@jspEl 'orderBy'/> <@jspEl 'sortBy'/>
-        </if>
-    </select>
 
-    <select id="queryOne" parameterType="java.util.Map" resultType="${className}">
-        SELECT
-        <if test="selector!=null">
-            <trim prefixOverrides=",">
-                <#list table.columns as column>
-                    <if test="selector.${column.columnNameFirstLower}!=null">
-                        , ${column.sqlName}
-                    </if>
-                </#list>
-            </trim>
-        </if>
-        <if test="selector==null">
-            <include refid="Base_Column_List" />
-        </if>
-        FROM ${table.sqlName}
-        <trim prefix="WHERE" prefixOverrides="AND | OR">
-            <#list table.columns as column>
-            <if test="condition.${column.columnNameFirstLower}!=null">
-                AND ${column.sqlName} = <@conditionMapperEl column.columnNameFirstLower/>
-            </if>
-            </#list>
-        </trim>
-        <if test="orderBy!=null">
-        ORDER BY <@jspEl 'orderBy'/> <@jspEl 'sortBy'/>
-        </if>
-        limit 0,1
-    </select>
 
-    <select id="count" resultType="java.lang.Integer">
-        SELECT count(${table.idColumn.sqlName}) FROM ${table.sqlName}
-       <where>
-           <#list table.columns as column>
-           <if test="${column.columnNameFirstLower}!=null">
-               <@jspEl 'groupOp'/> <@jspEl column.columnNameFirstLower+'.field'/> <@jspEl column.columnNameFirstLower+'.op'/>
-               <if test="${column.columnNameFirstLower}.op!='in'"> <@mapperEl column.columnNameFirstLower+'.data'/> </if>
-               <if test="${column.columnNameFirstLower}.op=='in'">
-                   <foreach collection="${column.columnNameFirstLower}.data" item="listItem" open="(" close=")" separator="," ><@mapperEl 'listItem'/></foreach>
-               </if>
-           </if>
-       </#list>
 
-       </where>
-    </select>
 
-    <select id="selectMaxId" resultType="${idJavaType}">
-        SELECT
-        MAX(id)
-        FROM ${table.sqlName}
-    </select>
 
-    <select id="findByCriteria" parameterType="cn.thinkjoy.common.mybatis.core.mybatis.criteria.Criteria"
-            resultType="${className}" >
-        select
-        <choose>
-            <when test="selector!=null and selector.size() > 0">
-                <trim prefixOverrides=",">
-                    <#list table.columns as column>
-                        <if test="selector.${column.columnNameFirstLower}!=null">
-                            , ${column.sqlName}
-                        </if>
-                    </#list>
-                </trim>
-            </when>
-            <otherwise>
-                <include refid="Base_Column_List" />
-            </otherwise>
-        </choose>
-        from ${table.sqlName}
-        <if test="_parameter != null" >
-            <where >
-                <include refid="Global.Where_Clause" />
-            </where>
-        </if>
-        <if test="hasOrderBy" >
-            ORDER BY
-            <foreach collection="orderBys" item="orderBy" separator="," >
-                <@jspEl 'orderBy'/></foreach>
-        </if>
-    </select>
 
-    <select id="countByCriteria" parameterType="cn.thinkjoy.common.mybatis.core.mybatis.criteria.Criteria" resultType="java.lang.Integer" >
-        select count(1)
-        from ${table.sqlName}
-        <if test="_parameter != null" >
-            <where >
-                <include refid="Global.Where_Clause" />
-            </where>
-        </if>
-    </select>
 
-    <select id="findOneByCriteria" parameterType="cn.thinkjoy.common.mybatis.core.mybatis.criteria.Criteria" resultType="${className}" >
-        select
-        <choose>
-            <when test="selector!=null and selector.size() > 0">
-                <trim prefixOverrides=",">
-                    <#list table.columns as column>
-                        <if test="selector.${column.columnNameFirstLower}!=null">
-                            , ${column.sqlName}
-                        </if>
-                    </#list>
-                </trim>
-            </when>
-            <otherwise>
-                <include refid="Base_Column_List" />
-            </otherwise>
-        </choose>
-        from ${table.sqlName}
-        <if test="_parameter != null" >
-            <where >
-                <include refid="Global.Where_Clause" />
-            </where>
-        </if>
-        <if test="hasOrderBy" >
-            <foreach collection="orderBys" item="orderBy" separator="," >
-                <@jspEl 'orderBy'/></foreach>
-        </if>
-        limit 0,1
-    </select>
 
-    <select id="pagingByCriteria" parameterType="cn.thinkjoy.common.mybatis.core.mybatis.criteria.Criteria" resultType="${className}" >
-        select
-        <choose>
-            <when test="selector!=null and selector.size() > 0">
-                <trim prefixOverrides=",">
-                    <#list table.columns as column>
-                        <if test="selector.${column.columnNameFirstLower}!=null">
-                            , ${column.sqlName}
-                        </if>
-                    </#list>
-                </trim>
-            </when>
-            <otherwise>
-                <include refid="Base_Column_List" />
-            </otherwise>
-        </choose>
-        from ${table.sqlName}
-        <if test="_parameter != null" >
-            <where >
-                <include refid="Global.Where_Clause" />
-            </where>
-        </if>
-        <if test="hasOrderBy" >
-            <foreach collection="orderBys" item="orderBy" separator="," >
-                <@jspEl 'orderBy'/></foreach>
-        </if>
-        <if test="hasLimit" >
-            limit <@jspEl 'first - 1'/>,<@jspEl 'last - first'/>
-        </if>
-    </select>
 
-    <update id="updateByCriteria" parameterType="cn.thinkjoy.common.mybatis.core.mybatis.criteria.Criteria">
-        UPDATE ${table.sqlName}
-        <trim prefix="SET" suffixOverrides=",">
-            <#list table.notPkColumns as column>
-                <if test="entityMap.${column.columnNameFirstLower}!=null">
-                    ${column.sqlName} = <@mapperEl 'entityMap.' + column.columnNameFirstLower/>,
-                </if>
-            </#list>
-        </trim>
-        <if test="_parameter != null" >
-            <where >
-                <include refid="Global.Where_Clause" />
-            </where>
-        </if>
-    </update>
 
-    <delete id="deleteByCriteria" parameterType="cn.thinkjoy.common.mybatis.core.mybatis.criteria.Criteria">
-        DELETE FROM ${table.sqlName}
-        <if test="_parameter != null" >
-            <where >
-                <include refid="Global.Where_Clause" />
-            </where>
-        </if>
-    </delete>
+
+
+
+
+
+
 
 </mapper>
 
