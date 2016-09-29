@@ -406,7 +406,6 @@ D
         <foreach collection="sorter" item="sort" separator="," >
             <@jspEl 'sort.field'/> <@jspEl 'sort.order'/></foreach>
         </if>
-        </select>
 
         <if test="offset != null">
         limit <@jspEl 'offset'/>, <@jspEl 'rows'/>
@@ -438,7 +437,6 @@ D
         <foreach collection="sorter" item="sort" separator="," >
             <@jspEl 'sort.field'/> <@jspEl 'sort.order'/></foreach>
         </if>
-                </select>
 
         <if test="offset != null">
         limit <@jspEl 'offset'/>, <@jspEl 'rows'/>
