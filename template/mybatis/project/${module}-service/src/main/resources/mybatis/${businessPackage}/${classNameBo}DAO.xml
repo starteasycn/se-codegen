@@ -234,7 +234,7 @@ D
                 AND ${column.sqlName} like CONCAT(<@mapperEl 'condition.' + column.columnNameFirstLower+'.data'/> , '%')
             </if>
             <if test="condition.${column.columnNameFirstLower}.op=='in'">
-                ${condition.groupOp}   <@jspEl 'condition.' + column.columnNameFirstLower+'.field'/>  <@jspEl 'condition.' + column.columnNameFirstLower+'.op'/>
+                <@jspEl 'condition.groupOp'/>   <@jspEl 'condition.' + column.columnNameFirstLower+'.field'/>  <@jspEl 'condition.' + column.columnNameFirstLower+'.op'/>
                 <foreach collection="condition.${column.columnNameFirstLower}.data" item="listItem" open="(" close=")" separator="," ><@mapperEl 'listItem'/></foreach>
             </if>
         </if>
@@ -310,7 +310,7 @@ D
                 AND ${column.sqlName} like CONCAT(<@mapperEl 'condition.' + column.columnNameFirstLower+'.data'/> , '%')
             </if>
             <if test="condition.${column.columnNameFirstLower}.op=='in'">
-                ${condition.groupOp}   <@jspEl 'condition.' + column.columnNameFirstLower+'.field'/>  <@jspEl 'condition.' + column.columnNameFirstLower+'.op'/>
+                <@jspEl 'condition.groupOp'/>   <@jspEl 'condition.' + column.columnNameFirstLower+'.field'/>  <@jspEl 'condition.' + column.columnNameFirstLower+'.op'/>
                 <foreach collection="condition.${column.columnNameFirstLower}.data" item="listItem" open="(" close=")" separator="," ><@mapperEl 'listItem'/></foreach>
             </if>
         </if>
@@ -394,7 +394,7 @@ D
                 AND ${column.sqlName} like CONCAT(<@mapperEl 'condition.' + column.columnNameFirstLower+'.data'/> , '%')
             </if>
             <if test="condition.${column.columnNameFirstLower}.op=='in'">
-                ${condition.groupOp}   <@jspEl 'condition.' + column.columnNameFirstLower+'.field'/>  <@jspEl 'condition.' + column.columnNameFirstLower+'.op'/>
+                <@jspEl 'condition.groupOp'/>   <@jspEl 'condition.' + column.columnNameFirstLower+'.field'/>  <@jspEl 'condition.' + column.columnNameFirstLower+'.op'/>
                 <foreach collection="condition.${column.columnNameFirstLower}.data" item="listItem" open="(" close=")" separator="," ><@mapperEl 'listItem'/></foreach>
             </if>
         </if>
@@ -461,7 +461,7 @@ D
                     AND ${column.sqlName} like CONCAT(<@mapperEl 'condition.' + column.columnNameFirstLower+'.data'/> , '%')
                 </if>
                 <if test="condition.${column.columnNameFirstLower}.op=='in'">
-                    ${condition.groupOp}   <@jspEl 'condition.' + column.columnNameFirstLower+'.field'/>  <@jspEl 'condition.' + column.columnNameFirstLower+'.op'/>
+                    <@jspEl 'condition.groupOp'/>   <@jspEl 'condition.' + column.columnNameFirstLower+'.field'/>  <@jspEl 'condition.' + column.columnNameFirstLower+'.op'/>
                     <foreach collection="condition.${column.columnNameFirstLower}.data" item="listItem" open="(" close=")" separator="," ><@mapperEl 'listItem'/></foreach>
                 </if>
             </if>
