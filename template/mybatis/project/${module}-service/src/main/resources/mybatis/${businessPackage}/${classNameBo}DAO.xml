@@ -43,12 +43,15 @@ D
 <#assign isSKey = true>
 </#if>
 
-    <!-- 插入 -->
+
     <sql id="Base_Column_List">
         <#list table.columns as _column>
         ${_column.sqlName} as ${_column.columnNameFirstLower} <#if _column_has_next>,</#if>
         </#list>
     </sql>
+
+    <!-- 插入 start-->
+
     <insert id="insert" parameterType="${className}">
         <#if isSKey>
             <selectKey keyProperty="id" resultType="String" order="BEFORE">
@@ -98,8 +101,186 @@ D
                 )
     </insert>
 
-    <!-- 查询 -->
-    <select id="queryList" resultType="${className}">
+
+    <!-- 插入 end-->
+
+    <!-- 修改 start-->
+        <!-- 更新 -->
+        <update id="update" parameterType="${className}">
+        UPDATE ${table.sqlName}
+        <trim prefix="SET" suffixOverrides=",">
+            <#list table.notPkColumns as column>
+            <if test="${column.columnNameFirstLower}!=null">
+                ${column.sqlName} = <@mapperEl column.columnNameFirstLower/>,
+            </if>
+        </#list>
+        </trim>
+                WHERE
+        <#list table.compositeIdColumns as column>
+        ${column.sqlName} = <@mapperEl column.columnNameFirstLower/><#if column_has_next> AND </#if>
+        </#list>
+        </update>
+
+        <update id="updateMap">
+        UPDATE ${table.sqlName}
+        <trim prefix="SET" suffixOverrides=",">
+            <#list table.notPkColumns as column>
+            <if test="map.${column.columnNameFirstLower}!=null">
+                ${column.sqlName} = <@mapperEl 'map.'+column.columnNameFirstLower />,
+            </if>
+        </#list>
+        </trim>
+        WHERE
+        id = <@mapperEl 'map.id'/>
+        </update>
+
+        <update id="updateByCondition">
+        UPDATE ${table.sqlName}
+        <trim prefix="SET" suffixOverrides=",">
+            <#list table.notPkColumns as column>
+            <if test="update.${column.columnNameFirstLower}!=null">
+                ${column.sqlName} = <@mapperEl 'update.'+column.columnNameFirstLower />,
+            </if>
+        </#list>
+        </trim>
+
+        <trim prefix="WHERE" prefixOverrides="AND | OR">
+        <#list table.columns as column>
+        <if test="condition.${column.columnNameFirstLower}!=null">
+            AND ${column.sqlName} = <@mapperEl 'condition.' + column.columnNameFirstLower/>
+        </if>
+        </#list>
+        </trim>
+        </update>
+
+        <update id="updateByWhereSql">
+        UPDATE ${table.sqlName}
+        <trim prefix="SET" suffixOverrides=",">
+            <#list table.notPkColumns as column>
+            <if test="update.${column.columnNameFirstLower}!=null">
+                ${column.sqlName} = <@mapperEl 'update.'+column.columnNameFirstLower />,
+            </if>
+        </#list>
+        </trim>
+
+
+        <if test="nativeSql!=null">
+            <@jspEl 'nativeSql' />
+        </if>
+        </update>
+
+
+
+        <update id="updateNull" parameterType="${className}">
+        UPDATE ${table.sqlName}
+        <trim prefix="SET" suffixOverrides=",">
+            <#list table.notPkColumns as column>
+            ${column.sqlName} = <@mapperEl column.columnNameFirstLower/>,
+        </#list>
+        </trim>
+                WHERE
+        <#list table.compositeIdColumns as column>
+        ${column.sqlName} = <@mapperEl column.columnNameFirstLower/> <#if column_has_next> AND </#if>
+        </#list>
+        </update>
+    <!-- 修改 end-->
+
+    <!-- 读取数据 start-->
+        <select id="findOne" parameterType="${idJavaType}" resultType="${className}">
+        SELECT
+        <include refid="Base_Column_List" />
+        FROM ${table.sqlName}
+        <trim prefix="WHERE" prefixOverrides="AND | OR">
+            <#list table.compositeIdColumns as column>
+            AND ${column.sqlName} = <@mapperEl 'id'/>
+        </#list>
+        </trim>
+        </select>
+
+        <select id="findAll" resultType="${className}">
+        SELECT
+        <include refid="Base_Column_List" />
+        FROM ${table.sqlName}
+        </select>
+
+        <!-- 查询 -->
+        <select id="queryOne" resultType="${className}">
+        SELECT
+        <if test="selector!=null">
+            <trim prefixOverrides=",">
+                <#list table.columns as column>
+                <if test="selector.${column.columnNameFirstLower}!=null">
+                    , ${column.sqlName}
+                </if>
+            </#list>
+        </trim>
+        </if>
+        <if test="selector==null">
+        <include refid="Base_Column_List" />
+        </if>
+
+                FROM ${table.sqlName}
+        <trim prefix="WHERE" prefixOverrides="AND | OR">
+        <#list table.columns as column>
+        <if test="condition.${column.columnNameFirstLower}!=null">
+
+            <if test="condition.${column.columnNameFirstLower}.op!='in' and condition.${column.columnNameFirstLower}.op!='like' and condition.${column.columnNameFirstLower}.op!='leftlike'">
+                <@jspEl 'condition.groupOp'/>   <@jspEl 'condition.' + column.columnNameFirstLower+'.field'/>  <@jspEl 'condition.' + column.columnNameFirstLower+'.op'/> <@mapperEl 'condition.' + column.columnNameFirstLower+'.data'/>
+            </if>
+            <if test="condition.${column.columnNameFirstLower}.op=='like'">
+                AND ${column.sqlName} like CONCAT('%', <@mapperEl 'condition.' + column.columnNameFirstLower+'.data'/> , '%')
+            </if>
+            <if test="condition.${column.columnNameFirstLower}.op=='leftlike'">
+                AND ${column.sqlName} like CONCAT(<@mapperEl 'condition.' + column.columnNameFirstLower+'.data'/> , '%')
+            </if>
+            <if test="condition.${column.columnNameFirstLower}.op=='in'">
+                ${condition.groupOp}   ${condition.login.field}  ${condition.login.op}
+                <foreach collection="condition.${column.columnNameFirstLower}.data" item="listItem" open="(" close=")" separator="," ><@mapperEl 'listItem'/></foreach>
+            </if>
+        </if>
+        </#list>
+                </trim>
+
+        <if test="sorter!=null" >
+        ORDER BY
+        <foreach collection="sorter" item="sort" separator="," >
+            <@jspEl 'sort.field'/> <@jspEl 'sort.order'/></foreach>
+        </if>
+        LIMIT 0,1
+        </select>
+
+        <!-- 查询 -->
+        <select id="queryOneByWhereSql" resultType="${className}">
+        SELECT
+        <if test="selector!=null">
+            <trim prefixOverrides=",">
+                <#list table.columns as column>
+                <if test="selector.${column.columnNameFirstLower}!=null">
+                    , ${column.sqlName}
+                </if>
+            </#list>
+        </trim>
+        </if>
+        <if test="selector==null">
+        <include refid="Base_Column_List" />
+        </if>
+
+        FROM ${table.sqlName}
+
+        <if test="nativeSql!=null">
+        <@jspEl 'nativeSql' />
+        </if>
+
+        <if test="sorter!=null" >
+        ORDER BY
+        <foreach collection="sorter" item="sort" separator="," >
+            <@jspEl 'sort.field'/> <@jspEl 'sort.order'/></foreach>
+        </if>
+        LIMIT 0,1
+        </select>
+
+        <!-- 查询 -->
+        <select id="queryList" resultType="${className}">
         SELECT
         <if test="selector!=null">
             <trim prefixOverrides=",">
@@ -141,25 +322,200 @@ D
         <foreach collection="sorter" item="sort" separator="," >
             <@jspEl 'sort.field'/> <@jspEl 'sort.order'/></foreach>
         </if>
-    </select>
+        </select>
+
+        <!-- 查询 -->
+        <select id="queryListByWhereSql" resultType="${className}">
+            SELECT
+            <if test="selector!=null">
+                <trim prefixOverrides=",">
+                    <#list table.columns as column>
+                    <if test="selector.${column.columnNameFirstLower}!=null">
+                        , ${column.sqlName}
+                    </if>
+                </#list>
+            </trim>
+        </if>
+        <if test="selector==null">
+            <include refid="Base_Column_List" />
+        </if>
+
+        FROM ${table.sqlName}
+
+        <if test="nativeSql!=null">
+            <@jspEl 'nativeSql' />
+        </if>
+
+        <if test="sorter!=null" >
+            ORDER BY
+            <foreach collection="sorter" item="sort" separator="," >
+                <@jspEl 'sort.field'/> <@jspEl 'sort.order'/></foreach>
+        </if>
+        </select>
+
+        <select id="queryBySql" resultType="Map">
+            ${executeSql}
+        </select>
+
+        <select id="queryBySqlCount" resultType="java.lang.Long">
+        ${executeSqlCount}
+        </select>
+
+    <!-- 读取数据 end-->
+
+    <!-- 分页数据 start-->
+
+        <select id="queryPage" resultType="${className}">
+        SELECT
+        <if test="selector!=null">
+            <trim prefixOverrides=",">
+                <#list table.columns as column>
+                <if test="selector.${column.columnNameFirstLower}!=null">
+                    , ${column.sqlName}
+                </if>
+            </#list>
+        </trim>
+        </if>
+        <if test="selector==null">
+        <include refid="Base_Column_List" />
+        </if>
+                FROM ${table.sqlName}
+        <trim prefix="WHERE" prefixOverrides="AND | OR">
+        <#list table.columns as column>
+        <if test="condition.${column.columnNameFirstLower}!=null">
+
+            <if test="condition.${column.columnNameFirstLower}.op!='in' and condition.${column.columnNameFirstLower}.op!='like' and condition.${column.columnNameFirstLower}.op!='leftlike'">
+                <@jspEl 'condition.groupOp'/>   <@jspEl 'condition.' + column.columnNameFirstLower+'.field'/>  <@jspEl 'condition.' + column.columnNameFirstLower+'.op'/> <@mapperEl 'condition.' + column.columnNameFirstLower+'.data'/>
+            </if>
+            <if test="condition.${column.columnNameFirstLower}.op=='like'">
+                AND ${column.sqlName} like CONCAT('%', <@mapperEl 'condition.' + column.columnNameFirstLower+'.data'/> , '%')
+            </if>
+            <if test="condition.${column.columnNameFirstLower}.op=='leftlike'">
+                AND ${column.sqlName} like CONCAT(<@mapperEl 'condition.' + column.columnNameFirstLower+'.data'/> , '%')
+            </if>
+            <if test="condition.${column.columnNameFirstLower}.op=='in'">
+                ${condition.groupOp}   ${condition.login.field}  ${condition.login.op}
+                <foreach collection="condition.${column.columnNameFirstLower}.data" item="listItem" open="(" close=")" separator="," ><@mapperEl 'listItem'/></foreach>
+            </if>
+        </if>
+        </#list>
+        </trim>
+
+        <if test="sorter!=null" >
+        ORDER BY
+        <foreach collection="sorter" item="sort" separator="," >
+            <@jspEl 'sort.field'/> <@jspEl 'sort.order'/></foreach>
+        </if>
+        </select>
+
+        <if test="offset != null">
+        limit <@jspEl 'offset'/>, <@jspEl 'rows'/>
+        </if>
+        </select>
+
+        <select id="queryPageByWhereSql" resultType="${className}">
+        SELECT
+        <if test="selector!=null">
+            <trim prefixOverrides=",">
+                <#list table.columns as column>
+                <if test="selector.${column.columnNameFirstLower}!=null">
+                    , ${column.sqlName}
+                </if>
+            </#list>
+        </trim>
+        </if>
+        <if test="selector==null">
+        <include refid="Base_Column_List" />
+        </if>
+                FROM ${table.sqlName}
+
+        <if test="nativeSql!=null">
+        <@jspEl 'nativeSql' />
+        </if>
+
+        <if test="sorter!=null" >
+        ORDER BY
+        <foreach collection="sorter" item="sort" separator="," >
+            <@jspEl 'sort.field'/> <@jspEl 'sort.order'/></foreach>
+        </if>
+                </select>
+
+        <if test="offset != null">
+        limit <@jspEl 'offset'/>, <@jspEl 'rows'/>
+        </if>
+        </select>
+
+        <select id="count" resultType="java.lang.Integer">
+        SELECT count(${table.idColumn.sqlName}) FROM ${table.sqlName}
+        <trim prefix="WHERE" prefixOverrides="AND | OR">
+            <#list table.columns as column>
+            <if test="condition.${column.columnNameFirstLower}!=null">
+
+                <if test="condition.${column.columnNameFirstLower}.op!='in' and condition.${column.columnNameFirstLower}.op!='like' and condition.${column.columnNameFirstLower}.op!='leftlike'">
+                    <@jspEl 'condition.groupOp'/>   <@jspEl 'condition.' + column.columnNameFirstLower+'.field'/>  <@jspEl 'condition.' + column.columnNameFirstLower+'.op'/> <@mapperEl 'condition.' + column.columnNameFirstLower+'.data'/>
+                </if>
+                <if test="condition.${column.columnNameFirstLower}.op=='like'">
+                    AND ${column.sqlName} like CONCAT('%', <@mapperEl 'condition.' + column.columnNameFirstLower+'.data'/> , '%')
+                </if>
+                <if test="condition.${column.columnNameFirstLower}.op=='leftlike'">
+                    AND ${column.sqlName} like CONCAT(<@mapperEl 'condition.' + column.columnNameFirstLower+'.data'/> , '%')
+                </if>
+                <if test="condition.${column.columnNameFirstLower}.op=='in'">
+                    ${condition.groupOp}   ${condition.login.field}  ${condition.login.op}
+                    <foreach collection="condition.${column.columnNameFirstLower}.data" item="listItem" open="(" close=")" separator="," ><@mapperEl 'listItem'/></foreach>
+                </if>
+            </if>
+        </#list>
+        </trim>
+        </select>
+
+        <select id="countByWhereSql" resultType="java.lang.Integer">
+        SELECT count(${table.idColumn.sqlName}) FROM ${table.sqlName}
+        <if test="nativeSql!=null">
+            <@jspEl 'nativeSql' />
+        </if>
+        </select>
+
+    <!-- 分页数据 end-->
+
+    <!-- 删除 start-->
+    <!-- 按Id删除 -->
+        <delete id="delete" parameterType="${idJavaType}">
+        DELETE FROM ${table.sqlName}
+        <trim prefix="WHERE" prefixOverrides="AND | OR">
+            <#list table.compositeIdColumns as column>
+            AND ${column.sqlName} = <@mapperEl 'id'/>
+        </#list>
+        </trim>
+        </delete>
 
 
+        <delete id="deleteByCondition" parameterType="java.util.Map">
+        DELETE FROM ${table.sqlName}
+        <trim prefix="WHERE" prefixOverrides="AND | OR">
+            <#list table.columns as column>
+            <if test="${column.columnNameFirstLower}!=null">
+                AND ${column.sqlName} = <@mapperEl column.columnNameFirstLower/>
+            </if>
+        </#list>
+        </trim>
+        </delete>
+
+        <delete id="deleteByWhereSql" parameterType="java.lang.String">
+        DELETE FROM ${table.sqlName}
+        <if test="nativeSql!=null">
+            <@jspEl 'nativeSql' />
+        </if>
+        <if test="nativeSql==null">
+            WHERE 1=2
+        </if>
+        </delete>
+
+        <delete id="deleteAll" >
+        DELETE FROM ${table.sqlName}
+        </delete>
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    <!-- 删除 end-->
 </mapper>
 
