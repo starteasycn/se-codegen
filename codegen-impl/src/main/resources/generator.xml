@@ -46,7 +46,7 @@
     <entry key="jdbc.url">jdbc:mysql://127.0.0.1:3306/${jdbc.databasename}?useUnicode=true&amp;characterEncoding=UTF-8</entry>
     <entry key="jdbc.driver">com.mysql.jdbc.Driver</entry>
     <entry key="jdbc.username">root</entry>
-    <entry key="jdbc.password">root</entry>
+    <entry key="jdbc.password">admin12345</entry>
 
     <!-- Oracle jdbc:oracle:oci:@tnsname_devdb
   <entry key="jdbc.url">jdbc:oracle:thin:@192.168.0.177:1521:[sid]</entry>
